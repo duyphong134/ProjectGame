@@ -1,0 +1,54 @@
+# depslib dependency file v1.0
+1712122699 source:c:\users\phong\onedrive\desktop\phong\coding\tetris\main.cpp
+	<iostream>
+	<SDL.h>
+	<SDL_image.h>
+	"Tetris.h"
+	<ctime>
+	<SDL_mixer.h>
+
+1711203518 source:c:\users\phong\onedrive\desktop\phong\coding\tetris\graphics.cpp
+	<iostream>
+	<SDL.h>
+	<SDL_image.h>
+	<vector>
+	"Graphics.h"
+
+1711203540 c:\users\phong\onedrive\desktop\phong\coding\tetris\graphics.h
+	<SDL.h>
+	<SDL_image.h>
+	<vector>
+	"def.h"
+
+1711203600 c:\users\phong\onedrive\desktop\phong\coding\tetris\def.h
+
+1711286458 source:c:\users\phong\onedrive\desktop\phong\coding\tetris\gameloop.cpp
+	"Gameloop.h"
+
+1711182410 source:c:\users\phong\onedrive\desktop\phong\coding\tetris\block.cpp
+	<SDL.h>
+
+1711183294 source:c:\users\phong\onedrive\desktop\phong\coding\tetris\board.cpp
+
+1711273144 c:\users\phong\onedrive\desktop\phong\coding\tetris\gameloop.h
+	<SDL.h>
+	<SDL_image.h>
+
+1712122694 source:c:\users\phong\onedrive\desktop\phong\coding\tetris\tetris.cpp
+	"Tetris.h"
+	<iostream>
+
+1712115766 c:\users\phong\onedrive\desktop\phong\coding\tetris\tetris.h
+	<SDL.h>
+	<SDL_image.h>
+
+1712120680 source:c:\users\phong\onedrive\desktop\phong\coding\tetris\utl.cpp
+	"util.h"
+
+1712107564 c:\users\phong\onedrive\desktop\phong\coding\tetris\util.h
+	<iostream>
+	<SDL.h>
+	<SDL_image.h>
+	<SDL_mixer.h>
+	<SDL_ttf.h>
+
