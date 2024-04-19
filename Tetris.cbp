@@ -32,11 +32,13 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="Menu.h" />
-		<Unit filename="Tetris.cpp" />
-		<Unit filename="Tetris.h" />
+		<Unit filename="Button.cpp" />
+		<Unit filename="Button.h" />
+		<Unit filename="Graphics.h" />
+		<Unit filename="Ingame.cpp" />
+		<Unit filename="Ingame.h" />
 		<Unit filename="Util.h" />
-		<Unit filename="Utl.cpp" />
+		<Unit filename="highscore.txt" />
 		<Unit filename="main.cpp" />
 		<Extensions />
 	</Project>
