@@ -23,7 +23,6 @@ const int InGame::figures[7][4] =
 void InGame::nextTetrimino(Point things[])
 {
     srand(time(0));
-	// hàm random màu để ít trùng nhau hơn
 	static std::set<int> colorsBag;
 	if(colorsBag.begin() == colorsBag.end()){
         for(int i = 1; i < 7; i++){
@@ -34,7 +33,6 @@ void InGame::nextTetrimino(Point things[])
 	advance(it1, rand()%colorsBag.size());
 	nextColor = *it1;
 
-	// ham random tetromino de ít trùng nhau hơn
     static std::set<int> tetradsBag;
     if(tetradsBag.begin() == tetradsBag.end()){
         for(int i = 0; i < 7; i++){
@@ -69,7 +67,6 @@ void InGame::updateFallingTetris()
 
 void InGame::handleEventsInGame()
 {
-    // tách hẳn trường hợp SDLK_DOWN ra để giảm độ trễ của chương trình
 
     const Uint8* state = SDL_GetKeyboardState(NULL);
 	if (state[SDL_SCANCODE_DOWN])
@@ -78,10 +75,7 @@ void InGame::handleEventsInGame()
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e))
-	{
-//	     int x = e.motion.x;
-//         int y = e.motion.y;
-//         std::cerr << "Mouse-left-down at (" << x << ", " << y << ")\n";
+	{=
 		switch (e.type)
 		{
 		case SDL_QUIT:
@@ -95,6 +89,11 @@ void InGame::handleEventsInGame()
                 pauseTexture = renderText("PAUSE", fontPause, textColorPause);
                 renderTexture(pauseTexture, 135, 400, render);
                 SDL_RenderPresent(render);
+                 if( Mix_PausedMusic() == 1 ){
+                    Mix_ResumeMusic();
+                }else{
+                    Mix_PauseMusic();
+                }
                 waitUntilKeyPressed();
                 break;
 			case SDLK_UP:
@@ -147,9 +146,9 @@ void InGame::moveRectPos(SDL_Rect& rect, int x, int y)
 bool InGame::isValid(const Point things[])
 {
 	for (int i = 0; i < 4; i++)
-		if (things[i].x < 0 || things[i].x >= Cols || things[i].y >= Lines) // Kiểm tra xem vị trí của khối liệu có ra ngoài khỏi khung của trờ chơi hay ko
+		if (things[i].x < 0 || things[i].x >= Cols || things[i].y >= Lines)
 			return false;
-		else if (field[things[i].y][things[i].x]) // Kiểm tra xem liệu có chạm vào một block đã có sẵn chưa
+		else if (field[things[i].y][things[i].x])
 			return false;
 	return true;
 }
@@ -190,13 +189,11 @@ void InGame::animateClearedRows(int rowIndex) {
 
 void InGame::removeClearedRows(int rowIndex) {
     playSound(lineClear);
-    // Shift down the blocks above the cleared row
     for (int i = rowIndex; i > 0; i--) {
         for (int j = 0; j < Cols; j++) {
             field[i][j] = field[i - 1][j];
         }
     }
-    // Clear the top row
     for (int j = 0; j < Cols; j++) {
         field[0][j] = 0;
     }
@@ -206,7 +203,6 @@ void InGame::removeClearedRows(int rowIndex) {
 void InGame::gameplay()
 {
 
-	////////// backup
 	for (int i = 0; i < 4; i++)
 		backup[i] = items[i];
 
@@ -226,9 +222,6 @@ void InGame::gameplay()
     }
 
 
-
-
-	////////// di chuyển
 	if (dx)
 	{
 		for (int i = 0; i < 4; i++)
@@ -243,10 +236,9 @@ void InGame::gameplay()
                 ghostblock[i] = ghostbackup[i];
     }
 
-	///////// xoay
 	if (rotate)
 	{
-		Point p = items[2];	// trục quay
+		Point p = items[2];
 		for (int i = 0; i < 4; i++)
 		{
 			int x = items[i].y - p.y;
@@ -261,16 +253,15 @@ void InGame::gameplay()
             for(int i = 0; i < 4; i++)
                 ghostblock[i] = ghostbackup[i];
 	}
-	///////// tick
 
 	if (currentTime - startTime >delay)
 	{
-        // Nếu như currentTime - startTime > delay nghĩa là block di chuyển không ra ngoài khung và cũng chưa di chuyển tới dưới cùng của grid
+
 		for (int i = 0; i < 4; i++)
 			backup[i] = items[i];
 		for (int i = 0; i < 4; i++)
 			items[i].y++;
-        // Nếu như tại đây mà ko valid nghĩa là block đã chạm đến đ
+
 		if (!isValid(items))
 		{
 			for (int i = 0; i < 4; i++)
@@ -282,7 +273,6 @@ void InGame::gameplay()
 		startTime = currentTime;
 	}
 
-	//////// check lines
 	int k = Lines - 1;
 	for (int i = k; i >= 0; i--)
 	{
@@ -334,6 +324,21 @@ bool InGame::gameover()
     return false;
 }
 
+void InGame::renderGameOver()
+{
+    std::string strHighScore = std::to_string(highScore);
+    std::string strPoint = std::to_string(currentPoint);
+    SDL_RenderClear(render);
+    SDL_RenderCopy(render, game_over_bg, NULL, NULL);
+
+    gameOverHighScore = renderText(strHighScore, fontGameOver, textColorGameOver);
+    renderTexture(gameOverHighScore, 170, 450, render);
+
+    gameOverScore = renderText(strPoint, fontGameOver, textColorGameOver);
+    renderTexture(gameOverScore , 380, 450, render);
+
+    SDL_RenderPresent(render);
+}
 
 void InGame::updateRender()
 {
@@ -407,6 +412,27 @@ void InGame::clean()
 	SDL_Quit();
 }
 
+void InGame::replay()
+{
+    for (int i = 0; i < Lines; i++) {
+        for (int j = 0; j < Cols; j++) {
+            field[i][j] = 0;
+        }
+    }
+
+    currentPoint = 0;
+    playing = true;
+    delay = 300;
+    startTime = SDL_GetTicks();
+
+    nextTetrimino(next_items);
+    nextTetrimino(items);
+    color = nextColor;
+    nextTetrimino(next_items);
+
+    updateRender();
+}
+
 void InGame::gameLoop()
 {
     while(isPlaying())
@@ -419,3 +445,5 @@ void InGame::gameLoop()
             updateRender();
         }
 }
+
+

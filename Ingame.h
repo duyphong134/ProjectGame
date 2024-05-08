@@ -9,32 +9,33 @@
 
 class InGame
 {
-    // definition
+private:
+
     enum{ ScreenW = 600, ScreenH = 960};
     enum{ BlockW = 36, BlockH = 36};
     enum{ Lines = 22, Cols = 10};
 
-    // window and render
+
     SDL_Window* window = NULL;
     SDL_Renderer* render = NULL;
     SDL_Texture* loadSurf = NULL;
 
-    // Texture
-    // ingame Texture
+
     SDL_Texture* background = NULL, *blocks = NULL, *ghostblocks = NULL, *scoreframe = NULL, *next = NULL;
 
-    //other Texture
-    SDL_Texture* main_menu = NULL;
 
-    //Rect
+    SDL_Texture* main_menu = NULL;
+    SDL_Texture* game_over_bg = NULL;
+
+
     SDL_Rect srcR = {0, 0, BlockW, BlockH}, destR = {0, 0, BlockW, BlockH};
     SDL_Rect dest_score = {0, 0, 165, 165};
     SDL_Rect dest_next = {435, 168, 167, 335};
 
-    // GameState
+
     bool playing= false;
 
-    // GameMaterial
+
     int field[Lines][Cols]= {0};
     static const int figures[7][4];
     struct Point
@@ -48,7 +49,7 @@ class InGame
     unsigned int delay = 300;
     Uint32  startTime = 0, currentTime = 0;
 
-    //font
+
     TTF_Font *fontScore = NULL;
     SDL_Color textColorScore = {240, 66, 225, 255};
     SDL_Texture *fontTexture = NULL;
@@ -57,17 +58,19 @@ class InGame
     SDL_Color textColorPause = {0, 0, 0, 255};
     SDL_Texture *pauseTexture = NULL;
 
-    // music
+    TTF_Font *fontGameOver = NULL;
+    SDL_Color textColorGameOver = {255, 255, 255, 255};
+    SDL_Texture *gameOverHighScore = NULL;
+    SDL_Texture *gameOverScore = NULL;
 
-        Mix_Music *gMusic = NULL;
 
-    // sound
-
-        Mix_Chunk *moveBlock = NULL;
-        Mix_Chunk *rotateBlock = NULL;
-        Mix_Chunk *hardDrop = NULL;
-        Mix_Chunk *lineClear = NULL;
-        Mix_Chunk *gameOver = NULL;
+    int soundLevel = 0;
+    Mix_Music *gMusic = NULL;
+    Mix_Chunk *moveBlock = NULL;
+    Mix_Chunk *rotateBlock = NULL;
+    Mix_Chunk *hardDrop = NULL;
+    Mix_Chunk *lineClear = NULL;
+    Mix_Chunk *gameOver = NULL;
 
 
 public:
@@ -91,7 +94,7 @@ public:
     }
     void logErrorAndExit(const char* msg, const char* error);
 
-    // gamelogic
+
     bool isValid(const Point []);
     void animateClearedRows(int rowIndex);
     void removeClearedRows(int rowIndex);
@@ -103,27 +106,28 @@ public:
     void moveRectPos(SDL_Rect &rect, int x, int y);
     void gameplay();
     bool gameover();
+    void renderGameOver();
     void updateRender();
     void takeHighScore();
     void updateHighScore();
     void clean();
     void waitUntilKeyPressed();
 
-    //font
+
     TTF_Font* loadFont(const char* path, int size);
     SDL_Texture* renderText(const std::string &text, TTF_Font* font, SDL_Color textColor);
     void renderTexture(SDL_Texture *texture, int x, int y, SDL_Renderer* renderer);
 
 
-    //music
     Mix_Music *loadMusic(const char* path);
     void playMusic(Mix_Music *gMusic);
 
-    // sound
+
     Mix_Chunk* loadSound(const char* path);
     void playSound(Mix_Chunk* gChunk);
 
-    // gameloop
+
+    void replay();
     void gameLoop();
 };
 

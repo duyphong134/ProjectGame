@@ -6,10 +6,12 @@
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 #include <iostream>
+#include <fstream>
 
 #include "Button.h"
 
 const char* WINDOW_TITLE = "Tetris";
+
 
 enum GameStatus {
     MENU,
@@ -18,185 +20,213 @@ enum GameStatus {
     PLAYING,
     PAUSE,
     GAME_OVER,
-    RECORD_SCORE
+    SETTING
 };
+
+const int SLIDER_WIDTH = 200;
+const int SLIDER_HEIGHT = 5;
+const int SLIDER_X = 190;
+const int SLIDER_Y = 115;
+
+const int PADDING_WIDTH = 10;
+const int PADDING_HEIGHT = 20;
+
+int sliderValue = 0;
+bool isDragging = false;
 
 class Graphics {
 private:
     enum { SCREEN_WIDTH = 600, SCREEN_HEIGHT = 960 };
     SDL_Renderer* renderer = nullptr;
     SDL_Window* window = nullptr;
-    SDL_Texture* menuTexture = nullptr, *help = nullptr, *help_background = nullptr, *help_exit = nullptr;
+    SDL_Texture* menuTexture = nullptr;
 
-    SDL_Rect help_dest;
-    SDL_Rect playButtonSrc_rect[BUTTON_SPRITE_TOTAL], helpButtonSrc_rect[BUTTON_SPRITE_TOTAL], levelButtonSrc_rect[BUTTON_SPRITE_TOTAL], helpExitButtonSrc_rect[BUTTON_SPRITE_TOTAL];
-    LTexture texturePlay, textureHelp, textureHelpExit;
-    LButton playButton, helpButton,help_exitButton, levelButton;
-    LButton replay, home;
-    InGame *ingame = nullptr;
+    SDL_Rect rect;
+    SDL_Rect playButton_dest, helpButton_dest, helpButtonExit_dest, settingButton_dest;
+    LButton playButton, helpButton, help_exitButton, settingButton;
+    SDL_Texture *helpBackground = NULL, *settingBackground = NULL;
+    InGame *ingame = new InGame();
     GameStatus gameState;
+    SDL_Event e;
 
-    int level = 1;
+    int volumeLevel = 0;
 
 public:
     Graphics() {
         if (!init()) {
             std::cerr << "Failed to initialize SDL" << std::endl;
-            // Handle initialization failure
-            // For example, throw an exception or exit the program
         }
-        if(!prepareMenu() || !prepareHelp()){
-            std::cout << "Failed to prepare!\n";
-        }
+
+        menuTexture = loadTexture("Assets/images/main_menu22.png");
+        helpBackground = loadTexture("Assets/images/help2.png");
+        settingBackground = loadTexture("Assets/images/nice2.png");
+
+        playButton.setPosition(193, 412);
+        helpButton.setPosition(193, 505);
+        settingButton.setPosition(193, 590);
+
+        ingame -> init(window, renderer);
         gameState = MENU;
     }
 
     ~Graphics() {}
 
-    bool prepareMenu() {
-        menuTexture = loadTexture("images/main_menu.png");
-
-        if(!texturePlay.loadFromFile("images/game_button_play.png", renderer)){
-            std::cout <<  "Failed to load play button sprite texture!\n";
-            return false;
-        }else{
-            playButtonSrc_rect[0].x = 0;
-            playButtonSrc_rect[0].y = 0;
-            playButtonSrc_rect[0].w = BUTTON_WIDTH;
-            playButtonSrc_rect[0].h = BUTTON_HEIGHT;
-            for(int i = 1; i < BUTTON_SPRITE_TOTAL; i++)
-            {
-                playButtonSrc_rect[i].x = 0;
-                playButtonSrc_rect[i].y = playButtonSrc_rect[i - 1].y + BUTTON_HEIGHT + 19;
-                playButtonSrc_rect[i].w = BUTTON_WIDTH;
-                playButtonSrc_rect[i].h = BUTTON_HEIGHT;
-            }
-            playButton.setPosition(180, 415);
-        }
-
-        if(!textureHelp.loadFromFile("images/game_button_help.png", renderer)){
-            std::cout <<  "Failed to load help button sprite texture!\n";
-            return false;
-        }else{
-            helpButtonSrc_rect[0].x = 0;
-            helpButtonSrc_rect[0].y = 0;
-            helpButtonSrc_rect[0].w = BUTTON_WIDTH ;
-            helpButtonSrc_rect[0].h = BUTTON_HEIGHT;
-            for(int i = 1; i < BUTTON_SPRITE_TOTAL; i++)
-            {
-                helpButtonSrc_rect[i].x = 0;
-                helpButtonSrc_rect[i].y = playButtonSrc_rect[i - 1].y + BUTTON_HEIGHT + 19;
-                helpButtonSrc_rect[i].w = BUTTON_WIDTH;
-                helpButtonSrc_rect[i].h = BUTTON_HEIGHT;
-            }
-            helpButton.setPosition(180, 420 + 100);
-        }
-
-        return true;
+    void renderMenu() {
+        prepareScene();
+        SDL_RenderCopy(renderer, menuTexture, NULL, NULL);
+        presentScene();
     }
 
     void handleEventsMenu() {
-        SDL_Event e;
         while(gameState == MENU){
-           while (SDL_PollEvent(&e)) {
+           while (SDL_PollEvent(&e) != 0) {
                 if (e.type == SDL_QUIT) {
                     gameState = QUIT;
                     exit(0);
                 }
                 playButton.handleEvent(&e);
                 helpButton.handleEvent(&e);
+                settingButton.handleEvent(&e);
 
-                if(playButton.getCurrentSprite() == BUTTON_SPRITE_MOUSE_DOWN){
-                    gameState = PLAYING;
-                    ingame = new InGame;
-                }else if(helpButton.getCurrentSprite() == BUTTON_SPRITE_MOUSE_DOWN){
-                    gameState = HELP;
-                }
                 renderMenu();
+
+                if(playButton.getCurrentSprite() == BUTTON_MOUSE_DOWN){
+                    gameState = PLAYING;
+                    ingame -> replay();
+                    ingame -> gameLoop();
+                    return;
+                }else if(helpButton.getCurrentSprite() == BUTTON_MOUSE_DOWN){
+                    gameState = HELP;
+                    return;
+                }else if(settingButton.getCurrentSprite() == BUTTON_MOUSE_DOWN){
+                    gameState = SETTING;
+                    return;
+                }
             }
         }
-    }
-
-    void renderMenu() {
-        prepareScene();
-        SDL_RenderCopy(renderer, menuTexture, NULL, NULL);
-        playButton.render(texturePlay, playButtonSrc_rect, renderer, playButton.getCurrentSprite());
-        helpButton.render(textureHelp, helpButtonSrc_rect, renderer, helpButton.getCurrentSprite());
-
-        presentScene();
-    }
-
-    bool prepareHelp(){
-        help = loadTexture("images/Help_inside.png");
-        help_background = loadTexture("images/main_menu2.png");
-        if (!textureHelpExit.loadFromFile("images/game_button_exit.png", renderer)){
-            std::cout <<  "Failed to load play button sprite texture!\n";
-            return false;
-        }else{
-            helpExitButtonSrc_rect[0].x = 0;
-            helpExitButtonSrc_rect[0].y = 0;
-            helpExitButtonSrc_rect[0].w = BUTTON_WIDTH ;
-            helpExitButtonSrc_rect[0].h = BUTTON_HEIGHT;
-            for(int i = 1; i < BUTTON_SPRITE_TOTAL; i++)
-            {
-                helpExitButtonSrc_rect[i].x = 0;
-                helpExitButtonSrc_rect[i].y = helpExitButtonSrc_rect[i - 1].y + BUTTON_HEIGHT + 19;
-                helpExitButtonSrc_rect[i].w = BUTTON_WIDTH;
-                helpExitButtonSrc_rect[i].h = BUTTON_HEIGHT;
-            }
-            help_exitButton.setPosition(0, 0);
-        }
-        return true;
+        gameState = MENU;
     }
 
     void renderHelp(){
         prepareScene();
-        SDL_RenderCopy(renderer, help_background, NULL, NULL);
-        SDL_RenderCopy(renderer, help, NULL, &help_dest);
-        help_exitButton.render(textureHelpExit, helpExitButtonSrc_rect, renderer, help_exitButton.getCurrentSprite());
-
+        SDL_RenderCopy(renderer, helpBackground, NULL, NULL);
         presentScene();
     }
 
     void handleEventsHelp(){
-        SDL_Event e;
         while(gameState == HELP){
-           while (SDL_PollEvent(&e)) {
+           while (SDL_PollEvent(&e) != 0) {
                 if (e.type == SDL_QUIT) {
                     gameState = QUIT;
                     exit(0);
                 }
                 help_exitButton.handleEvent(&e);
 
-                if(help_exitButton.getCurrentSprite() == BUTTON_SPRITE_MOUSE_DOWN){
+
+                if(help_exitButton.getCurrentSprite() == BUTTON_MOUSE_DOWN){
                     gameState = MENU;
                 }
-                renderHelp();
             }
         }
     }
 
+    void handleEventsGameOver(){
+        while(gameState == GAME_OVER){
+            while(SDL_PollEvent(&e) != 0){
+                int x = e.motion.x;
+                int y = e.motion.y;
+                    if(e.type == SDL_QUIT){
+                        exit(0);
+                    }else if(e.type == SDL_MOUSEBUTTONDOWN){
+                        if((x > 188 && x < 235) && (y > 540 && y < 580)){
+                            gameState = MENU;
+                        }else if((x > 259 && x < 322) && (y > 540 && y < 580)){
+                            ingame -> replay();
+                            gameState = PLAYING;
+                        }
+
+                }
+            }
+        }
+    }
+
+    void renderSetting() {
+        prepareScene();
+        SDL_RenderCopy(renderer, settingBackground, NULL, NULL);
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_Rect trackRect = {SLIDER_X, SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT};
+        SDL_RenderFillRect(renderer, &trackRect);
+
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        int handleX = SLIDER_X + sliderValue;
+        SDL_Rect handleRect = {handleX, SLIDER_Y - 10, PADDING_WIDTH, PADDING_HEIGHT};
+        SDL_RenderFillRect(renderer, &handleRect);
+
+        presentScene();
+    }
+
+
+    void handleEventsSetting()
+    {
+        while(gameState == SETTING){
+            while(SDL_PollEvent(&e) != 0){
+                std:: cerr << e.motion.x << " " << e.motion.y << std::endl;
+                if(e.type == SDL_QUIT){
+                    exit(0);
+                }else if (e.type ==  SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE) {
+                    gameState = MENU;
+                    return;
+                }else if(e.type == SDL_MOUSEBUTTONDOWN){
+                    int mouseX, mouseY;
+                    SDL_GetMouseState(&mouseX, &mouseY);
+                    if(mouseX >= SLIDER_X && mouseX <= SLIDER_X + SLIDER_WIDTH && mouseY >= 100 && mouseY <= 130){
+                        isDragging = true;
+                    }
+                }else if(e.type == SDL_MOUSEBUTTONUP){
+                    isDragging = false;
+                }else if(e.type == SDL_MOUSEMOTION){
+                    if(isDragging){
+                        int mouseX, mouseY;
+                        SDL_GetMouseState(&mouseX, &mouseY);
+                        sliderValue = mouseX - SLIDER_X;
+                        if (sliderValue < 0) sliderValue = 0;
+                        if (sliderValue > SLIDER_WIDTH) sliderValue = SLIDER_WIDTH;
+                        volumeLevel = (sliderValue) / SLIDER_WIDTH * 128;
+                        Mix_Volume(-1, volumeLevel);
+                    }
+                }
+            }
+                renderSetting();
+        }
+    }
+
+    int getSoundLevelSetting()
+    {
+            return volumeLevel;
+    }
+
     void handleEvents() {
         if (gameState == MENU) {
-            while(gameState == MENU){
-                handleEventsMenu();
-            }
+                while(gameState == MENU){
+                    handleEventsMenu();
+                }
         }else if(gameState == PLAYING){
-            ingame -> init(window,renderer);
             ingame -> gameLoop();
             if(ingame -> gameover()){
                 gameState = GAME_OVER;
             }
         }else if(gameState == GAME_OVER){
-                gameState = MENU;
-                delete ingame;
+                ingame -> renderGameOver();
+                handleEventsGameOver();
         }else if(gameState == HELP){
             while(gameState == HELP){
                 renderHelp();
                 handleEventsHelp();
             }
+        }else if(gameState == SETTING){
+                    handleEventsSetting();
         }
-
     }
 
     void logErrorAndExit(const char* msg, const char* error) {
@@ -239,8 +269,8 @@ public:
     }
 
     void prepareScene(){
-        SDL_SetRenderDrawColor( renderer, 0xFF, 0xFF, 0xFF, 0xFF );
-        SDL_RenderClear( renderer );
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_RenderClear(renderer);
     }
 
     void presentScene() {
@@ -255,27 +285,6 @@ public:
             SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_ERROR, "Load texture %s", IMG_GetError());
         }
         return texture;
-    }
-
-    void renderTexture(SDL_Texture* texture, int x, int y) {
-        SDL_Rect dest;
-
-        dest.x = x;
-        dest.y = y;
-        SDL_QueryTexture(texture, nullptr, nullptr, &dest.w, &dest.h);
-
-        SDL_RenderCopy(renderer, texture, nullptr, &dest);
-    }
-
-    void blitRect(SDL_Texture* texture, SDL_Rect* src, int x, int y) {
-        SDL_Rect dest;
-
-        dest.x = x;
-        dest.y = y;
-        dest.w = src->w;
-        dest.h = src->h;
-
-        SDL_RenderCopy(renderer, texture, src, &dest);
     }
 
     void quit() {
