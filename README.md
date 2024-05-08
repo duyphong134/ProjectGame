@@ -58,6 +58,7 @@ Tetris hay Xếp Hình (1984), trò chơi có 7 loại Khối Hình (Tetromino) 
 - Điều chỉnh phần tiếng dộng của game 
 
 <a name="tech"/>
+
 ### 4. Kỹ thuật lập trình
 
 - Mảng
