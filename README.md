@@ -35,5 +35,5 @@
   
 ## 5. Kết luận:
   - Chương trình chỉ mới được hoàn thiện về phần logic và phần hình ảnh, âm thanh khi chơi game
-  - Phần sự kiện chuột vẫn chưa được đẹp
-  - Nên tách thành nhiều file cho dễ quản lý và dễ fix hơn
+  - Còn nhiều ý tưởng chưa hoàn thiện so với tetris hiện đại
+  - 
